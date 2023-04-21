@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {useState,useRef,useEffect} from 'react';
 import { TextInput,StyleSheet, View, Text, SafeAreaView, FlatList, TouchableOpacity, Button,PanResponder,Animated ,ImageBackground,ScrollView} from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigationState } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,7 +12,7 @@ export default function App() {
   return (
      <NavigationContainer>
       <Stack.Navigator initialRouteName = "HomeScreen"> 
-        <Stack.Screen name = "HomeScreen" component={HomeScreen}/>
+        <Stack.Screen name = "HomeScreen" component={HomeScreen} options={{headerShown:false}}/>
         <Stack.Screen name = "ContactScreen" component={ContactScreen}/>
         <Stack.Screen name = "NewContact" component={NewContactForm}/>
         <Stack.Screen name = "JournalScreen" component={JournalScreen}/>
@@ -30,54 +30,141 @@ function JournalScreen({navigation}){
   );
 }
 
-function NewContactForm({route, navigation}){
-  const [text, onChangeText] = React.useState('Enter Name');
-  navigation.setParams({
+function NewContactForm({navigation,route}){
+  const [text, ChangeText] = useState('Enter Name');
+  const [num, ChangeNum] = useState('###-###-####');
+  const [date, ChangeDate] = useState('dd/mm/yyyy');
+  /*const getData = async (value2) => {
+  try {
+    const jsonValue = await AsyncStorage.getItem(value2)
+    if(jsonValue != null) {
+      if(value2 === "Clist") {    
+      setList(JSON.parse(jsonValue) );
+      console.log(list);}
+    }
+  } catch(e) {
+    // error reading value
+   
+  }}
+  const storeData = async (value,value2) => { 
+    try {    
+    const jsonValue = JSON.stringify(value)
+    console.log(value);
+    await AsyncStorage.setItem(value2, jsonValue)
+  } catch (e) {
+    // saving error
+
+  }
+}
+useEffect(() => {
+  getData("Clist");
+},[]);*/
+
+  function handlePress(){
+      //storeData(list,"Clist");*/
+      navigation.navigate({
+        name: 'ContactScreen',
+        params: { post: text },
+        merge: true,
+      });   
+  }
+  /*navigation.setParams({
    name: {text}
-  });
+  });*/
   return(
-    <View style = {styles.container}>
+    <View style = {styles.containerC}>
+    <Text style = {styles.h1}>Contact Info</Text>
     <TextInput
       style={styles.input}
-      onChangeText={onChangeText}
+      onChangeText={ChangeText}
       value={text}
+    />
+    <TextInput
+      style={styles.input}
+      onChangeText={ChangeNum}
+      value={num}
+      />
+    <TextInput
+      style={styles.input}
+      onChangeText={ChangeDate}
+      value={date}
     />
     <TouchableOpacity
       style= {styles.saveButton}
-      /*onPress={ ()=> {
-        navigation.navigate({
-          name: 'ContactScreen',
-          params: { name: text },
-          merge: true,
-        });
-      }}*/>
+      onPress={handlePress}>
       <Text>Save</Text>
     </TouchableOpacity>
   </View>
   );
 }
-function ContactScreen({navigation}){
-  const[list,setList]=useState([])
-  function handlePress(){
-    navigation.navigate('NewContact',{name:' '});
-    const newList = list.concat(1);
+
+
+function ContactScreen({navigation,route}){ 
+  const[list,setList]=useState([]);   
+  /*setName(route.params?.post);    
+  const newList = [...list ,newName];
+  setList(newList);*/
+  React.useEffect(() => {
+    if (route.params?.post) {  
+      // Post updated, do something with `route.params.post`
+      // For example, send the post to the server
+      handleItem();
+    }
+  }, [route.params?.post]);
+  useEffect(() => {
+    getData("Clist");
+  },[]);
+  
+  const getData = async (value2) => {
+    try {
+      const jsonValue = await AsyncStorage.getItem(value2)
+      if(jsonValue != null) {
+        if(value2 ==="Clist") {
+        setList(JSON.parse(jsonValue));}
+      }
+    } catch(e) {
+      // error reading value
+      console.log("hello");
+    }
+    
+  }
+
+
+  const storeData = async (value,value2) => {
+    try {
+    const jsonValue = JSON.stringify(value)
+    await AsyncStorage.setItem(value2, jsonValue)
+  } catch (e) {
+    // saving error
+    console.log("hi");
+  }
+}
+  function handleItem(){
+    //setName(route.params.post);    
+    const newList = [...list ,route.params.post];
     setList(newList);
+    storeData(newList,"Clist");
+  }
+  function handlePress(){  
+   // console.log(list);
+
+    navigation.navigate('NewContact');
+  
+
   }
   function Contact({item}){
     return(
       <TouchableOpacity
       style = {styles.profileIcon}>
-        {item}
+        <Text>{item}</Text>
         </TouchableOpacity>
     )
   }
 return(
-  <ScrollView style = {styles.containerC}>
-
-
+  <ScrollView>
     <FlatList contentContainerStyle = {{flex:1,flexDirection:'row',flexWrap:'wrap',padding:25,alignItems:'center'}}  
     data = {list}
-    renderItem={({item})=> <Contact item={item}/>}  
+    renderItem={({item})=><Contact item={item}/>}  
     ItemSeparatorComponent={() => <View style={{paddingLeft:200,height:40}}/> }
     />     
     <TouchableOpacity
@@ -86,14 +173,15 @@ return(
         <Text style = {styles.plus}>+</Text>
     </TouchableOpacity>  
    
-  </ScrollView>
+</ScrollView>
 );
 }
 
 function HomeScreen({navigation}){
 
   return(
-    <View style = {styles.container}>
+    <ImageBackground source="https://images.rawpixel.com/image_png_500/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvbHIvam9iNTQ1LXdpdC0zMWEucG5n.png"
+    style = {styles.container}>
         <TouchableOpacity
          style = {styles.button2}
           onPress = {() =>navigation.navigate('JournalScreen')}>
@@ -104,7 +192,7 @@ function HomeScreen({navigation}){
          onPress = {() =>navigation.navigate('ContactScreen')}>
           <ImageBackground style = {{height : "100%", width: "100%", alignItems:'center', justifyContent:"center"}}source = {{uri:"https://icons.veryicon.com/png/o/education-technology/ui-icon/contacts-77.png"}}/>
         </TouchableOpacity>
-    </View>
+    </ImageBackground>
   );
 }
 
@@ -157,6 +245,14 @@ const styles = StyleSheet.create({
     backgroundColor:'grey'
   },
   containerC:{
+    left:"35%",
+    flex:1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width:"30%",
+    backgroundColor: '#D3D3D3',
+    borderRadius:10,
+    borderWidth:2
   },
   plus: {
     fontSize: 80,
@@ -165,12 +261,23 @@ const styles = StyleSheet.create({
   input: {
     height: 40,
     margin: 12,
-    borderWidth: 1,
+    borderWidth: 1.5,
+    borderRadius:10,
     padding: 10,
   },
   saveButton:{
     height:30,
     width:60,
-    backgroundColor:'grey'
+    alignItems:"center",
+    justifyContent:"center",
+    backgroundColor:'grey',
+    padding:10
+  },
+  h1: {
+    position: "static",
+    marginTop:10,
+    fontWeight:"bold",
+    fontSize:20,
+    padding:30
   }
 });
