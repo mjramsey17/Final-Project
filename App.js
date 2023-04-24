@@ -5,6 +5,7 @@ import { NavigationContainer, useNavigationState } from '@react-navigation/nativ
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+///import ContactScreen from './ContactScreen.js';
 
 const Stack = createNativeStackNavigator();
 
@@ -16,6 +17,7 @@ export default function App() {
         <Stack.Screen name = "ContactScreen" component={ContactScreen}/>
         <Stack.Screen name = "NewContact" component={NewContactForm}/>
         <Stack.Screen name = "JournalScreen" component={JournalScreen}/>
+        <Stack.Screen name = "ContactInfo" component={ContactInfo}/>
       </Stack.Navigator>
     </NavigationContainer>
 
@@ -30,47 +32,54 @@ function JournalScreen({navigation}){
   );
 }
 
+function ContactInfo({navigation,route}){
+
+  const {contact}=route.params;
+
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Text style = {styles.contactN}>{contact.name}</Text>
+      <Text style = {styles.contactH}>Phone Number</Text>
+      <Text style = {styles.contactA}>{contact.phone}</Text>
+      <Text style = {styles.contactH}>Birthday</Text>
+      <Text style = {styles.contactA}>{contact.birth}</Text>
+    </View>
+  );
+}
+
 function NewContactForm({navigation,route}){
+  const getData = async (value2) => {
+    try {
+      const jsonValue = await AsyncStorage.getItem(value2)
+      if(jsonValue != null) {
+        /*if(value2 ==="Clist") {
+          setList(JSON.parse(jsonValue));
+        }*/
+        if(value2==="Cnum"){
+          setId(JSON.parse(jsonValue));
+        }
+      }
+    } catch(e) {
+      // error reading value
+      console.log("hello");
+    }
+    
+  }
+  const [ID,setId]= useState(0);
   const [text, ChangeText] = useState('Enter Name');
   const [num, ChangeNum] = useState('###-###-####');
   const [date, ChangeDate] = useState('dd/mm/yyyy');
-  /*const getData = async (value2) => {
-  try {
-    const jsonValue = await AsyncStorage.getItem(value2)
-    if(jsonValue != null) {
-      if(value2 === "Clist") {    
-      setList(JSON.parse(jsonValue) );
-      console.log(list);}
-    }
-  } catch(e) {
-    // error reading value
-   
-  }}
-  const storeData = async (value,value2) => { 
-    try {    
-    const jsonValue = JSON.stringify(value)
-    console.log(value);
-    await AsyncStorage.setItem(value2, jsonValue)
-  } catch (e) {
-    // saving error
-
-  }
-}
-useEffect(() => {
-  getData("Clist");
-},[]);*/
 
   function handlePress(){
-      //storeData(list,"Clist");*/
+    getData('Cnum');
+    const Contact={id:ID, name:text, phone:num, birth:date}
       navigation.navigate({
         name: 'ContactScreen',
-        params: { post: text },
+        params: { post: Contact },
         merge: true,
       });   
   }
-  /*navigation.setParams({
-   name: {text}
-  });*/
+
   return(
     <View style = {styles.containerC}>
     <Text style = {styles.h1}>Contact Info</Text>
@@ -100,10 +109,20 @@ useEffect(() => {
 
 
 function ContactScreen({navigation,route}){ 
+  /*const clearStorage = async () => {
+    try {
+      await AsyncStorage.clear();
+      alert('Storage successfully cleared!');
+    } catch (e) {
+      alert('Failed to clear the async storage.');
+    }
+  };
+  useEffect(() => {
+    clearStorage();
+  },[]);*/
   const[list,setList]=useState([]);   
-  /*setName(route.params?.post);    
-  const newList = [...list ,newName];
-  setList(newList);*/
+  const[number, setNumber]= useState(0);
+  const [searchText, changeSearch]= useState('Search');
   React.useEffect(() => {
     if (route.params?.post) {  
       // Post updated, do something with `route.params.post`
@@ -113,6 +132,7 @@ function ContactScreen({navigation,route}){
   }, [route.params?.post]);
   useEffect(() => {
     getData("Clist");
+    getData("Cnum");
   },[]);
   
   const getData = async (value2) => {
@@ -120,7 +140,11 @@ function ContactScreen({navigation,route}){
       const jsonValue = await AsyncStorage.getItem(value2)
       if(jsonValue != null) {
         if(value2 ==="Clist") {
-        setList(JSON.parse(jsonValue));}
+          setList(JSON.parse(jsonValue));
+        }
+        else if(value2==="Cnum"){
+          setNumber(JSON.parse(jsonValue));
+        }
       }
     } catch(e) {
       // error reading value
@@ -142,26 +166,33 @@ function ContactScreen({navigation,route}){
   function handleItem(){
     //setName(route.params.post);    
     const newList = [...list ,route.params.post];
+    setNumber(number+1);
     setList(newList);
     storeData(newList,"Clist");
+    storeData(number,"Cnum");
   }
   function handlePress(){  
    // console.log(list);
-
     navigation.navigate('NewContact');
-  
-
   }
   function Contact({item}){
     return(
       <TouchableOpacity
-      style = {styles.profileIcon}>
-        <Text>{item}</Text>
+      style = {styles.profileIcon}
+      onPress= {()=>navigation.navigate('ContactInfo',{contact: item})}>
+        <Text>{item.name}</Text>
         </TouchableOpacity>
     )
   }
+  
+
+
 return(
-  <ScrollView>
+  <View style = {{alignItems:"center"}}>  
+    <TextInput 
+    style={styles.searchBar}
+    onChangeText={changeSearch}
+    value={searchText}/>
     <FlatList contentContainerStyle = {{flex:1,flexDirection:'row',flexWrap:'wrap',padding:25,alignItems:'center'}}  
     data = {list}
     renderItem={({item})=><Contact item={item}/>}  
@@ -173,7 +204,7 @@ return(
         <Text style = {styles.plus}>+</Text>
     </TouchableOpacity>  
    
-</ScrollView>
+</View>
 );
 }
 
@@ -279,5 +310,26 @@ const styles = StyleSheet.create({
     fontWeight:"bold",
     fontSize:20,
     padding:30
+  },
+  contactN: {
+    fontSize: 30,
+    fontWeight: 20,
+  },
+  contactH:{
+    fontSize:20,
+    fontWeight: 10
+  },
+  contactA:{
+    fontSize:15,
+    fontWeight: 5
+  },
+  searchBar:{
+    height: 40,
+    width:"50%",
+    margin: 12,
+    borderWidth: 1.5,
+    borderRadius:10,
+    padding: 10,
+    backgroundColor:'white'
   }
 });
