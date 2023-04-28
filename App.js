@@ -1,11 +1,13 @@
 import * as React from 'react';
-import {useState,useRef,useEffect} from 'react';
-import { TextInput,StyleSheet, View, Text, SafeAreaView, FlatList, TouchableOpacity, Button,PanResponder,Animated ,ImageBackground,ScrollView} from 'react-native';
+import {useState,useRef,useEffect,useMergeState} from 'react';
+import { TextInput,StyleSheet, View, Text, SafeAreaView, FlatList, Pressable, Button,PanResponder,Animated ,ImageBackground,ScrollView} from 'react-native';
 import { NavigationContainer, useNavigationState } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Dropdown from 'react-native-input-select';
 ///import ContactScreen from './ContactScreen.js';
+import { SelectList } from 'react-native-dropdown-select-list';
 
 const Stack = createNativeStackNavigator();
 
@@ -57,6 +59,7 @@ function NewContactForm({navigation,route}){
         }*/
         if(value2==="Cnum"){
           setId(JSON.parse(jsonValue));
+          console.log(ID);
         }
       }
     } catch(e) {
@@ -65,14 +68,25 @@ function NewContactForm({navigation,route}){
     }
     
   }
+  const storeData = async (value,value2) => {
+    try {
+    const jsonValue = JSON.stringify(value)
+    await AsyncStorage.setItem(value2, jsonValue)
+  } catch (e) {
+    // saving error
+    console.log("hi");
+  }
+}
   const [ID,setId]= useState(0);
   const [text, ChangeText] = useState('Enter Name');
   const [num, ChangeNum] = useState('###-###-####');
   const [date, ChangeDate] = useState('dd/mm/yyyy');
-
+  useEffect(() => {
+    getData("Cnum");
+  },[]);
   function handlePress(){
-    getData('Cnum');
-    const Contact={id:ID, name:text, phone:num, birth:date}
+    const Contact={id:ID,name:text, phone:num, birth:date}
+    storeData(ID+1,'Cnum');
       navigation.navigate({
         name: 'ContactScreen',
         params: { post: Contact },
@@ -98,11 +112,11 @@ function NewContactForm({navigation,route}){
       onChangeText={ChangeDate}
       value={date}
     />
-    <TouchableOpacity
+    <Pressable
       style= {styles.saveButton}
       onPress={handlePress}>
       <Text>Save</Text>
-    </TouchableOpacity>
+    </Pressable>
   </View>
   );
 }
@@ -122,7 +136,24 @@ function ContactScreen({navigation,route}){
   },[]);*/
   const[list,setList]=useState([]);   
   const[number, setNumber]= useState(0);
-  const [searchText, changeSearch]= useState('Search');
+  //const[FList,setFList] = useState();
+  //const [searchText, changeSearch]= useState('Search');
+  //const[isSearching,changeIsSearch] = useState(false);  
+  const useMergeState = (initialState = {}) => {
+    const [value, setValue] = React.useState(initialState);
+  
+    const mergeState = newState => {
+      if (typeof newState === 'function') newState = newState(value);
+      setValue({ ...value, ...newState });
+    };
+  
+    return [value, mergeState];
+  };
+  const[userInput, changeUserInput] = useMergeState({
+    searchText:'Search',
+    isSearching: false,
+    FList:[],
+  });
   React.useEffect(() => {
     if (route.params?.post) {  
       // Post updated, do something with `route.params.post`
@@ -133,6 +164,8 @@ function ContactScreen({navigation,route}){
   useEffect(() => {
     getData("Clist");
     getData("Cnum");
+   // console.log(list);
+   // console.log(FList);
   },[]);
   
   const getData = async (value2) => {
@@ -166,43 +199,112 @@ function ContactScreen({navigation,route}){
   function handleItem(){
     //setName(route.params.post);    
     const newList = [...list ,route.params.post];
-    setNumber(number+1);
     setList(newList);
     storeData(newList,"Clist");
-    storeData(number,"Cnum");
   }
   function handlePress(){  
    // console.log(list);
     navigation.navigate('NewContact');
   }
   function Contact({item}){
+    console.log(item.name+item.id);
     return(
-      <TouchableOpacity
+      <Pressable
       style = {styles.profileIcon}
       onPress= {()=>navigation.navigate('ContactInfo',{contact: item})}>
         <Text>{item.name}</Text>
-        </TouchableOpacity>
+        </Pressable>
     )
   }
-  
-
-
+  function filterList({searchText}){
+    /*console.log(selected);
+    let tempList = [];
+    if(selected === "Name"){
+      console.log("attempting to filter name");
+      console.log(searchText);
+      tempList = list.filter(contact => contact.name === searchText);
+      console.log(tempList);
+    }
+    else if(selected === "Phone"){
+      tempList = list.filter(contact => contact.phone === searchText);
+    }
+    else if(selected === "Birth"){
+      tempList = list.filter(contact => contact.birth === searchText);
+    }
+    setFList(tempList);*/
+  }
+      /*<Dropdown
+        label = "Search"
+        placeholder = "Select a element.."
+        options = {[
+          {name:"Name",code:"NM"},
+          {name:"Phone",code:'#'},
+          {name:"Birthday",code:'BD'}]}
+        optionLabel={'name'}
+        optionValue={'code'}
+        selectedValue={selected}
+        onValueChange={(value) => setSelected(value)}
+        primaryColor={'green'}   
+        />*/
+  const data = [
+    {key:'1', value:'Name'},
+    {key:'2', value:'Phone'},
+    {key:'3', value:'Birth'},
+   ]
+  const [selected, setSelected] = useState(""); 
+  function checkSearchBar(){
+    //console.log(FList.name);
+    
+  }
+  function changedSearch(text){
+    let tempSearching = userInput.isSearching;
+    if(text=== "search" || text === ""){
+      tempSearching = false
+    }
+    else{
+      tempSearching = true;
+    }
+    console.log(selected);
+    let tempList = [];
+    if(selected === "Name"){
+      console.log("attempting to filter name");
+      console.log(text);
+      tempList = list.filter(contact => String(contact.name).includes(text));
+      console.log(tempList);
+    } 
+    else if(selected === "Phone"){
+      tempList = list.filter(contact => String(contact.phone).includes(text));
+    }
+    else if(selected === "Birth"){
+      tempList = list.filter(contact => String(contact.birth).includes(text));
+    }
+    changeUserInput({searchText: text, isSearching: tempSearching, FList:tempList});
+  }
 return(
   <View style = {{alignItems:"center"}}>  
-    <TextInput 
-    style={styles.searchBar}
-    onChangeText={changeSearch}
-    value={searchText}/>
-    <FlatList contentContainerStyle = {{flex:1,flexDirection:'row',flexWrap:'wrap',padding:25,alignItems:'center'}}  
-    data = {list}
+    <View style = {{display:"flex",flexDirection:"row",borderColor:'black',borderWidth:3,width:"40%",borderRadius:10,backgroundColor:"black"}}>
+      <TextInput 
+        style={styles.searchBar}
+        onChangeText={changedSearch}
+        value={userInput.searchText}/> 
+      <View style= {{width:"40%",borderColor:'black',borderWidth:1,height:45,backgroundColor:"white",borderRadius:10}}>      
+        <SelectList   
+        setSelected={(val) => setSelected(val)} 
+        data={data} 
+        save="value"
+      /></View>
+
+    </View>
+    <FlatList contentContainerStyle = {{flexWrap:'wrap',flexDirection:'row',padding:25,alignItems:'center'}}  
+    data = {userInput.isSearching ? userInput.FList : list}
     renderItem={({item})=><Contact item={item}/>}  
     ItemSeparatorComponent={() => <View style={{paddingLeft:200,height:40}}/> }
     />     
-    <TouchableOpacity
+    <Pressable
       style = {styles.container2}
       onPress = {handlePress}>
         <Text style = {styles.plus}>+</Text>
-    </TouchableOpacity>  
+    </Pressable>  
    
 </View>
 );
@@ -211,19 +313,20 @@ return(
 function HomeScreen({navigation}){
 
   return(
-    <ImageBackground source="https://images.rawpixel.com/image_png_500/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvbHIvam9iNTQ1LXdpdC0zMWEucG5n.png"
-    style = {styles.container}>
-        <TouchableOpacity
+    //<ImageBackground source="https://images.rawpixel.com/image_png_500/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvbHIvam9iNTQ1LXdpdC0zMWEucG5n.png"
+    //>
+    <View style = {styles.container}>
+        <Pressable
          style = {styles.button2}
           onPress = {() =>navigation.navigate('JournalScreen')}>
-          <ImageBackground style = {{height : "90%", width: "100%", alignItems:'center', justifyContent:"center"}}source = {{uri: "https://www.svgrepo.com/show/197786/open-book-reader.svg"}}/>
-        </TouchableOpacity>
-        <TouchableOpacity
+        </Pressable>
+        <Pressable
          style = {styles.button}
          onPress = {() =>navigation.navigate('ContactScreen')}>
           <ImageBackground style = {{height : "100%", width: "100%", alignItems:'center', justifyContent:"center"}}source = {{uri:"https://icons.veryicon.com/png/o/education-technology/ui-icon/contacts-77.png"}}/>
-        </TouchableOpacity>
-    </ImageBackground>
+        </Pressable>
+    </View>
+   // </ImageBackground>
   );
 }
 
@@ -324,12 +427,10 @@ const styles = StyleSheet.create({
     fontWeight: 5
   },
   searchBar:{
-    height: 40,
-    width:"50%",
-    margin: 12,
+    height:"100%",
+    width:"60%",
     borderWidth: 1.5,
     borderRadius:10,
-    padding: 10,
     backgroundColor:'white'
   }
 });
