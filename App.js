@@ -1,12 +1,11 @@
 import * as React from 'react';
 import {useState,useRef,useEffect,useMergeState} from 'react';
-import { TextInput,StyleSheet, View, Text, SafeAreaView, FlatList, Pressable, Button,PanResponder,Animated ,ImageBackground,ScrollView} from 'react-native';
+import { TextInput,StyleSheet, View, Text, SafeAreaView, FlatList, Pressable, Button,PanResponder,Animated ,ImageBackground,ScrollView,Image,TouchableOpacity} from 'react-native';
 import { NavigationContainer, useNavigationState } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Dropdown from 'react-native-input-select';
-///import ContactScreen from './ContactScreen.js';
+import journalImage from "./public/images/journal.jpg"
 import { SelectList } from 'react-native-dropdown-select-list';
 
 const Stack = createNativeStackNavigator();
@@ -16,9 +15,9 @@ export default function App() {
      <NavigationContainer>
       <Stack.Navigator initialRouteName = "HomeScreen"> 
         <Stack.Screen name = "HomeScreen" component={HomeScreen} options={{headerShown:false}}/>
-        <Stack.Screen name = "ContactScreen" component={ContactScreen}/>
-        <Stack.Screen name = "NewContact" component={NewContactForm}/>
-        <Stack.Screen name = "JournalScreen" component={JournalScreen}/>
+        <Stack.Screen name = "ContactScreen" component={ContactScreen} options={{headerShown:false}}/>
+        <Stack.Screen name = "NewContact" component={NewContactForm} options={{headerShown:false}}/>
+        <Stack.Screen name = "JournalScreen" component={JournalScreen} options={{headerShown:false}}/>
         <Stack.Screen name = "ContactInfo" component={ContactInfo}/>
       </Stack.Navigator>
     </NavigationContainer>
@@ -27,9 +26,15 @@ export default function App() {
 }
 
 function JournalScreen({navigation}){
+  const [textBoxText,setTextboxText]=useState("Start your journal entry here!");
+
   return(
-    <View style = {styles.container}>
-      <Text>This is the journal screen</Text>
+    <View style = {styles.journalContainer}>
+      <TextInput style = {styles.journalText}
+        onChangeText= {setTextboxText}
+        value = {textBoxText}>
+
+        </TextInput>
     </View>
   );
 }
@@ -38,14 +43,26 @@ function ContactInfo({navigation,route}){
 
   const {contact}=route.params;
 
+  const newContBack = {uri:"https://i.pinimg.com/originals/68/37/41/683741c3a7875e06a339641075834871.jpg"}
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text style = {styles.contactN}>{contact.name}</Text>
+    <ImageBackground source= {newContBack} style ={{width:"100%",height:"100%"}}>
+      <View style = {styles.containerCC}>
+      <Text style = {styles.contactN}>{contact.name}</Text> 
       <Text style = {styles.contactH}>Phone Number</Text>
-      <Text style = {styles.contactA}>{contact.phone}</Text>
+      <Text style = {styles.contactN}>{contact.phone}</Text> 
+      <Text style = {styles.contactH}>Age</Text>
+      <Text style = {styles.contactA}>{contact.age}</Text>
       <Text style = {styles.contactH}>Birthday</Text>
       <Text style = {styles.contactA}>{contact.birth}</Text>
-    </View>
+      <Text style = {styles.contactH}>Hometown</Text>
+      <Text style = {styles.contactA}>{contact.hometown}</Text>
+      <Text style = {styles.contactH}>Relationship</Text>
+      <Text style = {styles.contactA}>{contact.relation}</Text>
+      <Text style = {styles.contactH}>Our Hobbies</Text>
+      <Text style = {styles.contactA}>{contact.hobbies}</Text>
+      <Text style = {styles.contactH}>Journal Entries</Text>
+      </View>
+    </ImageBackground>
   );
 }
 
@@ -54,17 +71,12 @@ function NewContactForm({navigation,route}){
     try {
       const jsonValue = await AsyncStorage.getItem(value2)
       if(jsonValue != null) {
-        /*if(value2 ==="Clist") {
-          setList(JSON.parse(jsonValue));
-        }*/
+
         if(value2==="Cnum"){
           setId(JSON.parse(jsonValue));
-          console.log(ID);
         }
       }
     } catch(e) {
-      // error reading value
-      console.log("hello");
     }
     
   }
@@ -73,19 +85,23 @@ function NewContactForm({navigation,route}){
     const jsonValue = JSON.stringify(value)
     await AsyncStorage.setItem(value2, jsonValue)
   } catch (e) {
-    // saving error
-    console.log("hi");
+
   }
 }
   const [ID,setId]= useState(0);
   const [text, ChangeText] = useState('Enter Name');
   const [num, ChangeNum] = useState('###-###-####');
   const [date, ChangeDate] = useState('dd/mm/yyyy');
+  const [homeTown,changeTown] = useState('City, State');
+  const [journalEntries, addEntry]=useState([]);
+  const [relation,changeRelation]=useState("Relation");
+  const [hobbies,changeHobbies]=useState("Our Hobbies");
+  const [age,changeAge] = useState("Age");
   useEffect(() => {
     getData("Cnum");
   },[]);
   function handlePress(){
-    const Contact={id:ID,name:text, phone:num, birth:date}
+    const Contact={id:ID,name:text, phone:num, birth:date,hometown:homeTown,age:age,relationship:relation,ourHobby:hobbies,journals:journalEntries}
     storeData(ID+1,'Cnum');
       navigation.navigate({
         name: 'ContactScreen',
@@ -93,8 +109,14 @@ function NewContactForm({navigation,route}){
         merge: true,
       });   
   }
-
+  const newContBack = {uri:"https://i.pinimg.com/originals/68/37/41/683741c3a7875e06a339641075834871.jpg"}
   return(
+    <ImageBackground source= {newContBack} style ={{width:"100%",height:"100%"}}>
+    <Pressable
+      style={{width:"5%",height:"10%",backgroundColor:'tan'}}
+      onPress = {() =>navigation.navigate('ContactScreen')}>
+      <ImageBackground style = {{height : "100%", width: "100%", alignItems:'center', justifyContent:"center"}}source = {{uri:"https://icons.veryicon.com/png/o/education-technology/ui-icon/contacts-77.png"}}/>
+    </Pressable>
     <View style = {styles.containerC}>
     <Text style = {styles.h1}>Contact Info</Text>
     <TextInput
@@ -109,8 +131,28 @@ function NewContactForm({navigation,route}){
       />
     <TextInput
       style={styles.input}
+      onChangeText={changeAge}
+      value={age}
+    />
+    <TextInput
+      style={styles.input}
       onChangeText={ChangeDate}
       value={date}
+    />
+    <TextInput
+      style={styles.input}
+      onChangeText={changeTown}
+      value={homeTown}
+    />
+    <TextInput
+      style={styles.input}
+      onChangeText={changeRelation}
+      value={relation}
+    />
+    <TextInput
+      style={styles.input}
+      onChangeText={changeHobbies}
+      value={hobbies}
     />
     <Pressable
       style= {styles.saveButton}
@@ -118,6 +160,7 @@ function NewContactForm({navigation,route}){
       <Text>Save</Text>
     </Pressable>
   </View>
+  </ImageBackground>
   );
 }
 
@@ -136,9 +179,6 @@ function ContactScreen({navigation,route}){
   },[]);*/
   const[list,setList]=useState([]);   
   const[number, setNumber]= useState(0);
-  //const[FList,setFList] = useState();
-  //const [searchText, changeSearch]= useState('Search');
-  //const[isSearching,changeIsSearch] = useState(false);  
   const useMergeState = (initialState = {}) => {
     const [value, setValue] = React.useState(initialState);
   
@@ -156,16 +196,12 @@ function ContactScreen({navigation,route}){
   });
   React.useEffect(() => {
     if (route.params?.post) {  
-      // Post updated, do something with `route.params.post`
-      // For example, send the post to the server
       handleItem();
     }
   }, [route.params?.post]);
   useEffect(() => {
     getData("Clist");
     getData("Cnum");
-   // console.log(list);
-   // console.log(FList);
   },[]);
   
   const getData = async (value2) => {
@@ -180,8 +216,7 @@ function ContactScreen({navigation,route}){
         }
       }
     } catch(e) {
-      // error reading value
-      console.log("hello");
+
     }
     
   }
@@ -192,22 +227,18 @@ function ContactScreen({navigation,route}){
     const jsonValue = JSON.stringify(value)
     await AsyncStorage.setItem(value2, jsonValue)
   } catch (e) {
-    // saving error
-    console.log("hi");
+
   }
 }
-  function handleItem(){
-    //setName(route.params.post);    
+  function handleItem(){   
     const newList = [...list ,route.params.post];
     setList(newList);
     storeData(newList,"Clist");
   }
   function handlePress(){  
-   // console.log(list);
     navigation.navigate('NewContact');
   }
   function Contact({item}){
-    console.log(item.name+item.id);
     return(
       <Pressable
       style = {styles.profileIcon}
@@ -216,46 +247,18 @@ function ContactScreen({navigation,route}){
         </Pressable>
     )
   }
-  function filterList({searchText}){
-    /*console.log(selected);
-    let tempList = [];
-    if(selected === "Name"){
-      console.log("attempting to filter name");
-      console.log(searchText);
-      tempList = list.filter(contact => contact.name === searchText);
-      console.log(tempList);
-    }
-    else if(selected === "Phone"){
-      tempList = list.filter(contact => contact.phone === searchText);
-    }
-    else if(selected === "Birth"){
-      tempList = list.filter(contact => contact.birth === searchText);
-    }
-    setFList(tempList);*/
-  }
-      /*<Dropdown
-        label = "Search"
-        placeholder = "Select a element.."
-        options = {[
-          {name:"Name",code:"NM"},
-          {name:"Phone",code:'#'},
-          {name:"Birthday",code:'BD'}]}
-        optionLabel={'name'}
-        optionValue={'code'}
-        selectedValue={selected}
-        onValueChange={(value) => setSelected(value)}
-        primaryColor={'green'}   
-        />*/
+
   const data = [
     {key:'1', value:'Name'},
     {key:'2', value:'Phone'},
     {key:'3', value:'Birth'},
+    {key:'4',value:'Hometown'},
+    {key:'5',value:'Age'},
+    {key:'6',value:"Relationship"},
+    {key:'7',value:"Hobbies"}
    ]
   const [selected, setSelected] = useState(""); 
-  function checkSearchBar(){
-    //console.log(FList.name);
-    
-  }
+
   function changedSearch(text){
     let tempSearching = userInput.isSearching;
     if(text=== "search" || text === ""){
@@ -264,13 +267,9 @@ function ContactScreen({navigation,route}){
     else{
       tempSearching = true;
     }
-    console.log(selected);
     let tempList = [];
     if(selected === "Name"){
-      console.log("attempting to filter name");
-      console.log(text);
       tempList = list.filter(contact => String(contact.name).includes(text));
-      console.log(tempList);
     } 
     else if(selected === "Phone"){
       tempList = list.filter(contact => String(contact.phone).includes(text));
@@ -278,11 +277,28 @@ function ContactScreen({navigation,route}){
     else if(selected === "Birth"){
       tempList = list.filter(contact => String(contact.birth).includes(text));
     }
+    else if(selected === "Hometown"){
+      tempList = list.filter(contact => String(contact.hometown).includes(text));
+    }
+    else if(selected === "Age"){
+      tempList = list.filter(contact => String(contact.age).includes(text));
+    }
+    else if(selected === "Hobbies"){
+      tempList = list.filter(contact => String(contact.hobbies).includes(text));
+    }
+    else if(selected === "Relationship"){
+      tempList = list.filter(contact => String(contact.relation).includes(text));
+    }
     changeUserInput({searchText: text, isSearching: tempSearching, FList:tempList});
-  }
-return(
-  <View style = {{alignItems:"center"}}>  
-    <View style = {{display:"flex",flexDirection:"row",borderColor:'black',borderWidth:3,width:"40%",borderRadius:10,backgroundColor:"black"}}>
+  } 
+  const contBack= {uri: "https://wallpaperaccess.com/full/198038.jpg"};
+  const homeBut = {uri:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTmhe26YhSN4aU1O5cZqBwZ0SBSaNNhZwjHQg&usqp=CAUhttps://p7.hiclipart.com/preview/104/498/557/5bbc427426f04.jpg"}
+return(  
+  <ImageBackground style ={{width:"100%",height:"100%",position:"absolute",zIndex:-1}}source = {contBack}>    
+  <Pressable onPress={() =>navigation.navigate('HomeScreen')} style={{width:"5%",height:"10%"}}><Image source = {homeBut}  style = {{width:"100%",height:"100%",borderRadius:10}}  /></Pressable>
+  <View style={{alignItems:"center"}}>  
+  <Text style ={{fontSize:40,fontWeight:"bold"}}>Contacts</Text>
+    <View style = {{display:"flex",flexDirection:"row",borderColor:'black',borderWidth:3,width:"40%",borderRadius:10,backgroundColor:"black",zIndex:10}}>
       <TextInput 
         style={styles.searchBar}
         onChangeText={changedSearch}
@@ -295,6 +311,7 @@ return(
       /></View>
 
     </View>
+
     <FlatList contentContainerStyle = {{flexWrap:'wrap',flexDirection:'row',padding:25,alignItems:'center'}}  
     data = {userInput.isSearching ? userInput.FList : list}
     renderItem={({item})=><Contact item={item}/>}  
@@ -305,20 +322,22 @@ return(
       onPress = {handlePress}>
         <Text style = {styles.plus}>+</Text>
     </Pressable>  
-   
-</View>
+  </View>
+  </ImageBackground>
 );
 }
 
 function HomeScreen({navigation}){
-
+  const back = {uri:"https://cdn.pixabay.com/photo/2016/10/14/21/20/fireplace-1741208_1280.jpg"}
+  const journal = {uri:"https://www.svgrepo.com/show/197786/open-book-reader.svg"}
   return(
-    //<ImageBackground source="https://images.rawpixel.com/image_png_500/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvbHIvam9iNTQ1LXdpdC0zMWEucG5n.png"
-    //>
+    <ImageBackground style = {{width:"100%",height:"100%",alignItems:'center'}}source={back}>
+      <Text style= {{fontSize:50,fontWeight:'bold',color:'white'}}>Daily Vintage</Text>
     <View style = {styles.container}>
         <Pressable
          style = {styles.button2}
           onPress = {() =>navigation.navigate('JournalScreen')}>
+          <ImageBackground style= {{height:"90%",width:"100%",alignItems:"center",justifyContent:"center"}}source = {journal}/>
         </Pressable>
         <Pressable
          style = {styles.button}
@@ -326,27 +345,28 @@ function HomeScreen({navigation}){
           <ImageBackground style = {{height : "100%", width: "100%", alignItems:'center', justifyContent:"center"}}source = {{uri:"https://icons.veryicon.com/png/o/education-technology/ui-icon/contacts-77.png"}}/>
         </Pressable>
     </View>
-   // </ImageBackground>
+   </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 2,
-    backgroundColor: '#fff',
+    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: "space-evenly",
     height:'100%',
-    width:'100%'
+    width:'100%',
+    flexDirection:'row'
   },
   button: {
-    backgroundColor: "grey",
+    backgroundColor: "#ffad01",
     width:200,
     height:200,
     alignItems:'center',
     justifyContent:'center',
-    borderRadius:10
-
+    borderRadius:10,
+    padding:15,
+    shadowRadius:30,
   },  
   button2:{
     backgroundColor: "#5C4033",
@@ -354,7 +374,9 @@ const styles = StyleSheet.create({
     height:200,
     alignItems:'center',
     justifyContent:'center',
-    borderRadius:10
+    borderRadius:10,
+    padding:15,
+    shadowRadius:30,
   },
   container2: {
     backgroundColor:'blue',
@@ -373,10 +395,11 @@ const styles = StyleSheet.create({
     width:125,
     alignItems:"center",
     justifyContent:"center",
-    borderColor:'black',
-    borderWidth:3,
+    shadowColor:"#a88f59",
+    shadowRadius:10,
     borderRadius: 10,
-    backgroundColor:'grey'
+    backgroundColor:'#FFFDD0',
+    fontFamily:"handwriting"
   },
   containerC:{
     left:"35%",
@@ -384,9 +407,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width:"30%",
-    backgroundColor: '#D3D3D3',
+    backgroundColor:'#FFFDD0',
     borderRadius:10,
     borderWidth:2
+  },
+  containerCC:{
+    left:"35%",
+    flex:1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width:"30%",
   },
   plus: {
     fontSize: 80,
@@ -405,14 +435,14 @@ const styles = StyleSheet.create({
     alignItems:"center",
     justifyContent:"center",
     backgroundColor:'grey',
-    padding:10
+    padding:5
   },
   h1: {
     position: "static",
     marginTop:10,
     fontWeight:"bold",
     fontSize:20,
-    padding:30
+    padding:5
   },
   contactN: {
     fontSize: 30,
@@ -420,17 +450,33 @@ const styles = StyleSheet.create({
   },
   contactH:{
     fontSize:20,
-    fontWeight: 10
+    fontWeight: 10,
+    //borderColor:"black",
+    //borderWidth:1,
   },
   contactA:{
     fontSize:15,
-    fontWeight: 5
+    fontWeight: 5,
+    borderBottomWidth:1,
+    width:"50%",
+    alignItems:'center'
   },
   searchBar:{
-    height:"100%",
+    height:45,
     width:"60%",
     borderWidth: 1.5,
     borderRadius:10,
     backgroundColor:'white'
+  },
+  journalContainer:{
+    backgroundImage: `url(${journalImage})`,
+    height: '100vh',
+    width:'100vw'
+  },
+  journalText:{
+    marginLeft:'135px',
+    fontSize:'23px',
+    height:'23px',
+    marginTop:'138px'
   }
 });
